@@ -9,6 +9,11 @@ next_id = 1
 class JournalCreate(BaseModel):
     content:str
 
+@app.get("/journals/{journal_id}")
+def show_entry(journal_id:int):
+    for entry in journal_entries:
+        if entry["id"] == journal_id:
+            return entry
 
 @app.get("/journals")
 def show_entries():
