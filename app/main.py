@@ -43,13 +43,17 @@ Base.metadata.create_all(bind=engine)
 
 @app.get("/journals/{journal_id}")
 def show_entry(journal_id:int):
-    for entry in journals:
-        if entry["id"] == journal_id:
-            return entry
-    raise HTTPException(
-        status_code = status.HTTP_404_NOT_FOUND,
-        detail="Journal not found"
-    )
+    db = SessionLocal()
+    statement = select(Journal).where(Journal.id == journal_id)
+    journal = db.scalar(statement)
+    db.close()
+    if not journal:
+        raise HTTPException(
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail="Journal not found"
+        )
+    else:
+        return journal
 
 
 @app.get("/journals")
@@ -73,7 +77,7 @@ def create_journal(journal:JournalCreate):
     db.add(new_entry)
     db.commit()
     db.refresh(new_entry)
-    db.close
+    db.close()
 
     # next_journal_id+=1
     return new_entry
