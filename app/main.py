@@ -1,12 +1,15 @@
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
-from database import Base,engine
+from database import Base,engine,SessionLocal
 from enum import Enum
+from sqlalchemy import String, ForeignKey, select
+from sqlalchemy.orm import Mapped, mapped_column
+
 
 app = FastAPI()
 
-journal_entries = []
-next_journal_id = 1
+# journal_entries = []
+# next_journal_id = 1
 next_user_id = 1
 
 class Mood(str, Enum):
@@ -19,17 +22,28 @@ class Mood(str, Enum):
     EXCITED = "excited"
     NEUTRAL = "neutral"
 
-class User(BaseModel):
-    id:int
-    username:str
-
 class JournalCreate(BaseModel):
-    content:str
-    mood:Mood | None = None
+    content: str
+    mood: Mood | None = None
+
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(String)
+
+class Journal(Base):
+    __tablename__ = "journals"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    content:Mapped[str] = mapped_column(String)
+    mood:Mapped[str] = mapped_column(String)
+    user_id:Mapped[int] = mapped_column(ForeignKey("users.id"))
+
+
+Base.metadata.create_all(bind=engine)
 
 @app.get("/journals/{journal_id}")
 def show_entry(journal_id:int):
-    for entry in journal_entries:
+    for entry in journals:
         if entry["id"] == journal_id:
             return entry
     raise HTTPException(
@@ -40,20 +54,26 @@ def show_entry(journal_id:int):
 
 @app.get("/journals")
 def show_entries():
-    return journal_entries
+    db = SessionLocal()
+    statement = select(Journal)
+    journals = db.scalars(statement).all()
+    db.close()
+
+    return journals
 
 
 @app.post("/journals")
 def create_journal(journal:JournalCreate):
-    global next_journal_id
-    
-    new_entry = {
-    "id": next_journal_id,
-    "content": journal.content
-    }
-    if journal.mood:
-        new_entry["mood"] = journal.mood
+    db = SessionLocal()
+    new_entry = Journal(
+        content = journal.content,
+        mood = journal.mood.value if journal.mood else None,
+        user_id = 1
+    )
+    db.add(new_entry)
+    db.commit()
+    db.refresh(new_entry)
+    db.close
 
-    journal_entries.append(new_entry)
-    next_journal_id+=1
+    # next_journal_id+=1
     return new_entry
