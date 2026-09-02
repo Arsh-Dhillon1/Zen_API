@@ -28,14 +28,14 @@ class JournalCreate(BaseModel):
 
 class User(Base):
     __tablename__ = "users"
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key = True)
     username: Mapped[str] = mapped_column(String)
 
 class Journal(Base):
     __tablename__ = "journals"
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key = True)
     content:Mapped[str] = mapped_column(String)
-    mood:Mapped[str] = mapped_column(String)
+    mood:Mapped[str | None] = mapped_column(String, nullable = True)
     user_id:Mapped[int] = mapped_column(ForeignKey("users.id"))
 
 
@@ -81,3 +81,47 @@ def create_journal(journal:JournalCreate):
 
     # next_journal_id+=1
     return new_entry
+
+@app.put("/journals/{journal_id}")
+def update_journal(journal_id: int, journal: JournalCreate):
+    db = SessionLocal()
+
+    statement = select(Journal).where(Journal.id == journal_id)
+    existing_journal = db.scalar(statement)
+
+    if not existing_journal:
+        db.close()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Journal not found"
+        )
+
+    existing_journal.content = journal.content
+    existing_journal.mood = journal.mood.value if journal.mood else None
+
+    db.commit()
+    db.refresh(existing_journal)
+    db.close()
+
+    return existing_journal
+
+
+@app.delete("/journals/{journal_id}")
+def delete_journal(journal_id: int):
+    db = SessionLocal()
+
+    statement = select(Journal).where(Journal.id == journal_id)
+    existing_journal = db.scalar(statement)
+
+    if not existing_journal:
+        db.close()
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Journal not found"
+        )
+
+    db.delete(existing_journal)
+    db.commit()
+    db.close()
+
+    return {"message": "Journal deleted successfully"}
