@@ -1,173 +1,168 @@
 # Zen Journal API 🧘
 
-A production-oriented backend project built with **FastAPI**, **SQLAlchemy**, **Amazon EC2**, and **Amazon RDS**.
+A FastAPI-based journal API deployed on AWS using a private EC2 instance and Amazon RDS MySQL.
 
-The project started as a simple FastAPI application using SQLite and was later deployed to AWS with a private EC2 instance and a managed MySQL database on Amazon RDS.
+The project started as a simple FastAPI application using SQLite and was later migrated to a cloud-based AWS architecture.
 
 ---
 
 ## 🏗️ Current Architecture
 
 ```text
-                    AWS VPC
-              ┌─────────────────┐
-              │                 │
-Internet ──→  │ Bastion Host    │
-              │ Public Subnet   │
-              │                 │
-              └────────┬────────┘
-                       │ SSH
-                       ▼
-              ┌─────────────────┐
-              │   Zen API EC2   │
-              │  Private Subnet │
-              │                 │
-              │ FastAPI         │
-              │ Uvicorn :8000   │
-              └────────┬────────┘
-                       │
-                       │ MySQL :3306
-                       ▼
-              ┌─────────────────┐
-              │   Amazon RDS    │
-              │    MySQL        │
-              │  Private Subnet │
-              └─────────────────┘
-Current AWS components
-Amazon VPC
-Public subnet containing the bastion host
-Private subnet containing the Zen API EC2 instance
-Amazon RDS MySQL for persistent database storage
-Security Groups controlling communication between components
-SSH Agent Forwarding / SSH access through Bastion
+                         AWS VPC
+                            │
+             ┌──────────────┴──────────────┐
+             │                             │
+        Public Subnet                 Private Subnet
+             │                             │
+      ┌──────────────┐              ┌──────────────┐
+      │ Bastion Host │───── SSH ───▶│  Zen API EC2 │
+      └──────────────┘              │   FastAPI    │
+                                    │ Uvicorn :8000│
+                                    └──────┬───────┘
+                                           │
+                                      MySQL :3306
+                                           │
+                                           ▼
+                                    ┌──────────────┐
+                                    │  Amazon RDS  │
+                                    │    MySQL     │
+                                    └──────────────┘
+```
 
-Note: An Application Load Balancer has not been implemented yet.
+### Current AWS Components
 
-🚀 Features
+- Amazon VPC
+- Public subnet containing the Bastion Host
+- Private subnet containing the Zen API EC2 instance
+- Amazon RDS MySQL for persistent database storage
+- Security Groups controlling communication between components
+- SSH access through the Bastion Host
+
+> **Note:** An Application Load Balancer has not been implemented yet.
+
+---
+
+## 🚀 Features
 
 The API currently supports:
 
-Create journal entries
-Retrieve all journal entries
-Retrieve a journal entry by ID
-Update journal entries
-Delete journal entries
-Mood categorization
-Persistent storage using MySQL
+- Create journal entries
+- Retrieve all journal entries
+- Retrieve a journal entry by ID
+- Update journal entries
+- Delete journal entries
+- Mood categorization
+- Persistent storage using MySQL
 
-Supported moods:
+### Supported Moods
 
-happy
-calm
-sad
-angry
-anxious
-grateful
-excited
-neutral
-🛠️ Technology Stack
-Application
-Python
-FastAPI
-Uvicorn
-Pydantic
-SQLAlchemy
-Database
-SQLite — original development database
-MySQL — production database
-Amazon RDS
-Cloud / Infrastructure
-Amazon EC2
-Amazon VPC
-Public and Private Subnets
-Bastion Host
-Security Groups
-Amazon RDS
-📁 Project Structure
+- `happy`
+- `calm`
+- `sad`
+- `angry`
+- `anxious`
+- `grateful`
+- `excited`
+- `neutral`
+
+---
+
+## 🛠️ Tech Stack
+
+| Category | Technologies |
+|---|---|
+| Backend | Python, FastAPI, Pydantic |
+| ORM | SQLAlchemy |
+| Server | Uvicorn |
+| Database | SQLite → MySQL |
+| Cloud | Amazon EC2, Amazon RDS |
+| Networking | Amazon VPC, Subnets, Security Groups |
+| Access | Bastion Host, SSH |
+
+---
+
+## 📁 Project Structure
+
+```text
 Zen_API/
-│
 └── app/
-    │
     ├── main.py
     ├── database.py
     └── venv/
-main.py
+```
 
-Contains:
+### `main.py`
 
-FastAPI application
-Pydantic request models
-SQLAlchemy models
-API endpoints
-Journal CRUD operations
-database.py
+Contains the FastAPI application, API endpoints, Pydantic models, and SQLAlchemy database models.
 
-Responsible for:
+### `database.py`
 
-Reading the database connection URL
-Creating the SQLAlchemy engine
-Creating database sessions
-Defining the SQLAlchemy declarative base
-🗄️ Database
+Handles the SQLAlchemy engine, database sessions, and database configuration.
 
-The application originally used SQLite during development.
+---
 
-The original database contained:
+## 🗄️ Database
 
-users
-journals
+The application originally used SQLite and was later migrated to MySQL on Amazon RDS.
 
-The application was later configured to use Amazon RDS MySQL.
+The database contains:
 
-The database relationship is:
+- `users`
+- `journals`
 
+The relationship between the tables is:
+
+```text
 users
   │
   │ 1
   │
-  │
   │ *
 journals
+```
 
-Each journal entry contains a user_id foreign key referencing the users table.
+Each journal entry references a user through the `user_id` foreign key.
 
-🔄 SQLite → MySQL Migration
+---
 
-The project demonstrates moving the application's persistence layer from SQLite to Amazon RDS MySQL.
+## 🔄 SQLite → MySQL Migration
 
-The migration process involved:
+The application's persistence layer was migrated from SQLite to Amazon RDS MySQL.
 
-Creating the RDS MySQL database.
-Configuring the private EC2 instance to communicate with RDS.
-Updating the application's database configuration.
-Using SQLAlchemy to create the required tables in RDS.
-Migrating the existing application data into the new database.
+The migration involved:
+
+1. Creating the RDS MySQL database
+2. Connecting the private EC2 instance to RDS
+3. Updating the application's database configuration
+4. Creating the required tables in RDS
+5. Migrating existing application data
 
 The original SQLite database was preserved as the source database.
 
-☁️ AWS Deployment
-1. VPC
+---
 
-The application runs inside an AWS VPC.
+## ☁️ AWS Deployment
 
-The infrastructure separates public-facing infrastructure from private application/database infrastructure.
+### VPC
 
+The application is deployed inside an AWS VPC with separate public and private subnets.
+
+```text
 VPC
-│
 ├── Public Subnet
 │   └── Bastion Host
 │
 └── Private Subnet
     ├── Zen API EC2
-    └── RDS
-2. Bastion Host
+    └── RDS MySQL
+```
 
-The bastion host is located in a public subnet and provides SSH access into the private network.
+### Bastion Host
 
-The private Zen API server does not require a public IPv4 address.
+The Bastion Host is located in the public subnet and provides SSH access to the private Zen API EC2 instance.
 
-Access follows:
-
+```text
 Developer Laptop
        │
        │ SSH
@@ -177,173 +172,94 @@ Bastion Host
        │ SSH
        ▼
 Private Zen API EC2
-3. Private Zen API Server
+```
 
-The FastAPI application runs on an EC2 instance inside a private subnet.
+### Zen API EC2
 
-Uvicorn runs the application on:
+The FastAPI application runs on an EC2 instance inside the private subnet.
 
-0.0.0.0:8000
+The application listens on port `8000`.
 
-The EC2 instance is not directly exposed to the public Internet.
+The EC2 instance does not have a public IPv4 address.
 
-4. Amazon RDS
+### Amazon RDS
 
-The application uses Amazon RDS MySQL as its persistent database.
+Amazon RDS MySQL provides persistent database storage.
 
-The RDS instance is placed inside the VPC and is accessible by the Zen API server through the MySQL port:
+The database is accessible from the Zen API EC2 instance through MySQL port `3306`.
 
-3306
+Database credentials are provided through the `DATABASE_URL` environment variable.
 
-The database is protected using a dedicated security group.
+---
 
-The application connects using an environment variable:
+## 🔐 Security
 
-DATABASE_URL
+- Application EC2 is deployed in a private subnet
+- RDS is not publicly exposed
+- Bastion Host is used for SSH access
+- Security Groups control traffic between components
+- Database credentials are stored using environment variables
+- Private keys and credentials are not committed to Git
 
-This keeps database credentials out of the source code.
+---
 
-🔐 Security
-
-The architecture follows a basic defense-in-depth approach.
-
-EC2
-
-The Zen API server is located in a private subnet and does not require a public IP address.
-
-Bastion
-
-SSH access is performed through a dedicated bastion host.
-
-RDS
-
-RDS is not exposed directly to the Internet.
-
-Only the application server should be able to communicate with the database on:
-
-TCP 3306
-Credentials
-
-Database credentials are supplied through environment variables rather than being hardcoded into the application.
-
-Example:
-
-export DATABASE_URL="mysql+pymysql://..."
-
-Never commit database passwords, private keys, or other secrets to Git.
-
-▶️ Running the API
+## ▶️ Running the API
 
 Activate the virtual environment:
 
+```bash
 source venv/bin/activate
+```
 
-Start Uvicorn:
+Start the application:
 
+```bash
 uvicorn main:app --host 0.0.0.0 --port 8000
+```
 
-The application will then listen on:
+FastAPI Swagger documentation is available at:
 
-http://0.0.0.0:8000
-
-FastAPI's interactive Swagger documentation is available at:
-
+```text
 /docs
-🔌 API Endpoints
-Get all journals
-GET /journals
-Get a journal
-GET /journals/{journal_id}
-Create a journal
-POST /journals
+```
 
-Example request:
+---
 
+## 🔌 API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/journals` | Get all journals |
+| `GET` | `/journals/{journal_id}` | Get a journal |
+| `POST` | `/journals` | Create a journal |
+| `PUT` | `/journals/{journal_id}` | Update a journal |
+| `DELETE` | `/journals/{journal_id}` | Delete a journal |
+
+### Example Request
+
+```json
 {
-  "content": "Today I remained consistent with my goals.",
-  "mood": "happy"
+    "content": "I am staying consistent with my engineering journey",
+    "mood": "happy"
 }
-Update a journal
-PUT /journals/{journal_id}
-Delete a journal
-DELETE /journals/{journal_id}
-🧪 Example
+```
 
-A journal entry:
+---
 
-{
-  "content": "I am staying consistent with my engineering journey",
-  "mood": "happy"
-}
+## 📚 What I Learned
 
-is persisted in MySQL through:
-
-FastAPI
-   ↓
-SQLAlchemy
-   ↓
-MySQL
-   ↓
-Amazon RDS
-📚 What This Project Demonstrates
-
-This project goes beyond basic CRUD by demonstrating several backend and cloud concepts:
-
-REST API development with FastAPI
-Pydantic data validation
-SQLAlchemy ORM
-Relational database design
-Foreign keys
-SQLite → MySQL migration
-AWS VPC networking
-Public vs private subnets
-Bastion host architecture
-EC2 deployment
-Amazon RDS
-Security Groups
-Environment-based configuration
-SSH access to private infrastructure
-Separation of application and database layers
-🔮 Future Improvements
-
-The current architecture can be extended further.
-
-Planned improvements include:
-
- Application Load Balancer
- HTTPS using ACM
- Public API access through the Load Balancer
- Multiple API EC2 instances
- Auto Scaling
- Proper user creation/authentication
- Better database migration tooling
- Docker containerization
- CI/CD pipeline
- CloudWatch monitoring and logging
- Production-grade process management
- Infrastructure as Code
-
-A future architecture could look like:
-
-                    Internet
-                       │
-                       ▼
-                ┌──────────────┐
-                │     ALB      │
-                │ Public       │
-                └──────┬───────┘
-                       │
-             ┌─────────┴─────────┐
-             ▼                   ▼
-       ┌───────────┐       ┌───────────┐
-       │ Zen API   │       │ Zen API   │
-       │ EC2       │       │ EC2       │
-       │ Private   │       │ Private   │
-       └─────┬─────┘       └─────┬─────┘
-             │                   │
-             └─────────┬─────────┘
-                       ▼
-                 ┌───────────┐
-                 │ RDS MySQL │
-                 │ Private   │
-                 └───────────┘
+- Building REST APIs with FastAPI
+- Pydantic data validation
+- SQLAlchemy ORM
+- Relational database design
+- Foreign keys
+- SQLite → MySQL migration
+- AWS VPC networking
+- Public vs private subnets
+- Bastion Host architecture
+- EC2 deployment
+- Amazon RDS
+- Security Groups
+- Environment-based configuration
+- SSH access to private infrastructure
+- Separation of application and database layers
